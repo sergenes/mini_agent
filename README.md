@@ -2,7 +2,7 @@
 
 A minimal AI agent built without any agent framework — just Python, the OpenAI SDK, and a `while` loop.
 
-This project accompanies the Medium article **"Build Your Own AI Agent from Scratch"** by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/).
+This project accompanies the Medium article **[Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/@sergey-nes/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)** by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/).
 
 ---
 
