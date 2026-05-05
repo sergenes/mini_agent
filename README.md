@@ -19,7 +19,7 @@ The agent takes a task, calls tools when needed, observes the results, and loops
 ## Setup
 
 ```bash
-git clone https://github.com/your-username/mini-agent
+git clone https://github.com/sergenes/mini-agent
 cd mini-agent
 
 python -m venv .venv
