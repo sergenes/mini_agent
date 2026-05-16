@@ -2,7 +2,10 @@
 
 A minimal AI agent built without any agent framework — just Python, the OpenAI SDK, and a `while` loop.
 
-This project accompanies the Medium article **[Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)** by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/).
+This project accompanies the Medium article series by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/):
+
+- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb) — the core loop, providers, tools, mixed mode
+- **Part 2:** *(coming soon)* — reliability layer: retry, circuit breaker, schema validation, tracing, and provider fallback
 
 ---
 
@@ -218,6 +221,35 @@ Each tool call spawns a fresh subprocess, performs the `initialize` → `call_to
 - Ollama function calling works with `llama3.1`, `llama3.2`, `qwen2.5`, `mistral-nemo`. Models like `phi3` or `deepseek-r1` may not support it reliably.
 - Gemini uses its OpenAI-compatible endpoint — no `google-generativeai` SDK needed.
 - The `anthropic` SDK is only needed if you use `--provider anthropic`.
+
+---
+
+## Changelog
+
+### v0.2 — Reliability layer
+
+Added `reliability.py` on top of the unchanged core loop. Every item is independently useful; none require changes to `core.py`.
+
+**LLM-level resilience**
+- `_RetryingProvider` — wraps any provider's `complete()` with exponential backoff + jitter (up to 5 attempts). The agent loop never sees a transient network failure.
+
+**Tool-level resilience**
+- `with_retry()` — retries a single tool call on exception (configurable attempts and base delay)
+- `CircuitBreaker` — stops calling a broken tool after N consecutive failures; auto-resets after a timeout
+- `validated_call()` — validates tool arguments against the JSON schema with pydantic before execution; returns an error string the model can self-correct on
+- `traced_call()` — emits a structured log line (tool name, args, result, duration) for every call regardless of outcome
+- `run_agent_reliable()` — `run_agent()` with all four tool layers stacked; drop-in replacement
+
+**Provider fallback**
+- `run_agent_with_fallback()` — tries a list of providers in order, falling back on exception *or* silent failure (model outputs tool invocations as plain text instead of structured `tool_calls`)
+- `_looks_like_failed_tool_call()` — heuristic that turns the silent failure into a detectable error
+- `--fallback MODEL [MODEL …]` CLI flag — e.g. `--fallback llama3.1 mistral-nemo`
+
+**agent.py** — `run_agent_reliable()` is now the default for `local` and `remote` modes.
+
+### v0.1 — Initial release
+
+Core agent loop: `agent.py`, `core.py`, `providers.py`, `tools.py`, `ui.py`, MCP client/server.
 
 ---
 
