@@ -13,6 +13,7 @@ source .venv/bin/activate
 cp .env.example .env   # add API keys first
 
 # Local (requires Ollama running: ollama serve)
+python agent.py --mode local --local-model mistral-nemo "What is 15% of 847?"
 python agent.py --mode local "What is 15% of 847?"
 python agent.py --mode local --local-model qwen2.5 "What's the weather in Tokyo?"
 
@@ -39,6 +40,7 @@ Source files and their roles:
 |------|------|
 | `agent.py` | CLI entry point — argparse, REPL, mode dispatch |
 | `core.py` | The agent loop (`run_agent`, `run_agent_mixed`) |
+| `reliability.py` | Reliability layer: `with_retry`, `CircuitBreaker`, `validated_call`, `traced_call`, `run_agent_reliable` |
 | `providers.py` | Provider abstraction + format converters |
 | `tools.py` | Tool implementations, schemas, `call_tool` dispatcher |
 | `ui.py` | `Spinner` — thread-safe braille spinner for live terminal output |

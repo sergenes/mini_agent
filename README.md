@@ -84,6 +84,35 @@ python agent.py --mode local --interactive
 python agent.py --mode mixed --interactive
 ```
 
+### With provider fallback (local mode)
+
+Try providers in order; skip models that don't support structured tool calling:
+
+```bash
+python agent.py --mode local --fallback llama3.1 mistral-nemo "What is 15% of 847?"
+```
+
+If `qwen2.5` (the default) fails or outputs text-based tool invocations, the agent retries with `llama3.1`, then `mistral-nemo`. Each attempt uses the full reliability stack from `reliability.py`.
+
+### Network resilience test (LLM retry)
+
+This demonstrates the reliability layer surviving a real network interruption:
+
+```bash
+python agent.py --mode remote --provider openai \
+    "Get today's date and the weather in Tokyo."
+```
+
+1. Run the command. When you see `Thinking…`, turn off Wi-Fi or disconnect ethernet.
+2. The agent retries the LLM call with exponential backoff:
+   ```
+   WARNING  LLM call attempt 1 failed (Connection error) — retrying in 2.1s
+   WARNING  LLM call attempt 2 failed (Connection error) — retrying in 4.3s
+   ```
+3. Turn Wi-Fi back on. The next attempt succeeds and the agent finishes normally.
+
+The retry is in `_RetryingProvider` inside `reliability.py` — it wraps the provider's `complete()` call so the agent loop never sees the transient failure. Up to 5 attempts, base delay 2 s, doubles each retry.
+
 ### Quiet mode (suppress tool trace)
 
 ```bash
@@ -117,6 +146,7 @@ This triggers six tool calls in sequence: `get_current_date` → `get_weather` �
 mini_agent/
 ├── agent.py         # CLI entry point — argument parsing, REPL, mode dispatch
 ├── core.py          # The agent loop: run_agent() and run_agent_mixed()
+├── reliability.py   # Reliability layer: retry, circuit breaker, validation, tracing, provider fallback
 ├── providers.py     # LLM provider abstraction (OpenAI, Anthropic, Gemini, Ollama)
 ├── tools.py         # Tool implementations and schemas
 ├── ui.py            # Spinner — thread-safe braille activity indicator
