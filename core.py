@@ -61,6 +61,7 @@ def run_agent(
     extra_functions: dict | None = None,
     system_prompt: str = _SYSTEM_DEFAULT,
     verbose: bool = True,
+    tool_dispatcher=None,
     _spinner: Spinner | None = None,
 ) -> str:
     """
@@ -98,6 +99,8 @@ def run_agent(
         if not response.tool_calls:
             return response.content or ""
 
+        dispatch = tool_dispatcher or call_tool
+
         for tc in response.tool_calls:
             args_str = _fmt_args(tc.arguments)
 
@@ -107,7 +110,7 @@ def run_agent(
                 if extra_functions and tc.name in extra_functions:
                     result = extra_functions[tc.name](**tc.arguments)
                 else:
-                    result = call_tool(tc.name, tc.arguments)
+                    result = dispatch(tc.name, tc.arguments)
             finally:
                 if spinner:
                     spinner.stop()

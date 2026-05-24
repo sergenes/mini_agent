@@ -35,6 +35,7 @@ except ImportError:
 
 from providers import create_provider, LLMProvider
 from core import run_agent, run_agent_mixed
+from reliability import run_agent_reliable, run_agent_with_fallback
 
 
 _BANNER = """\
@@ -92,6 +93,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Suppress tool call trace output",
     )
     p.add_argument(
+        "--fallback",
+        nargs="+",
+        default=[],
+        metavar="MODEL",
+        help=(
+            "Fallback local model(s) tried in order if the primary fails "
+            "(e.g. --fallback llama3.1 mistral-nemo). Local mode only."
+        ),
+    )
+    p.add_argument(
         "task",
         nargs="*",
         help="Task to run (omit when using --interactive)",
@@ -110,9 +121,12 @@ def _describe_mode(args, local: LLMProvider | None, remote: LLMProvider | None) 
 def run_task(task: str, args, local: LLMProvider | None, remote: LLMProvider | None) -> str:
     verbose = not args.quiet
     if args.mode == "local":
-        return run_agent(task, local, verbose=verbose)
+        if args.fallback:
+            providers = [local] + [create_provider("ollama", m) for m in args.fallback]
+            return run_agent_with_fallback(task, providers, verbose=verbose)
+        return run_agent_reliable(task, local, verbose=verbose)
     if args.mode == "remote":
-        return run_agent(task, remote, verbose=verbose)
+        return run_agent_reliable(task, remote, verbose=verbose)
     return run_agent_mixed(task, local, remote, verbose=verbose)
 
 
