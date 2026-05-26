@@ -5,7 +5,10 @@ A minimal AI agent built without any agent framework — just Python, the OpenAI
 This project accompanies the Medium article series by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/):
 
 - **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb) — the core loop, providers, tools, mixed mode
-- **Part 2:** *(coming soon)* — reliability layer: retry, circuit breaker, schema validation, tracing, and provider fallback
+- **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/@sergey-nes/781e0db1b5b3) — reliability layer: retry, circuit breaker, schema validation, tracing, and provider fallback
+
+
+Follow me on [LinkedIn](https://lnkd.in/epTFAmQJ) and [Medium](https://lnkd.in/eNCh6JTE) for more on AI tools, mobile development, and whatever I'm currently building!
 
 ---
 
