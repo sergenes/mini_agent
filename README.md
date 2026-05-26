@@ -8,7 +8,7 @@ This project accompanies the Medium article series by [Sergey Neskoromny](https:
 - **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/@sergey-nes/781e0db1b5b3) — reliability layer: retry, circuit breaker, schema validation, tracing, and provider fallback
 
 
-Follow me on [LinkedIn](https://lnkd.in/epTFAmQJ) and [Medium](https://lnkd.in/eNCh6JTE) for more on AI tools, mobile development, and whatever I'm currently building!
+Follow me on [LinkedIn](https://lnkd.in/epTFAmQJ) and [Medium](https://sergey-nes.medium.com/) for more on AI tools, mobile development, and whatever I'm currently building!
 
 ---
 
