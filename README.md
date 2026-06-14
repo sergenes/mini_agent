@@ -6,6 +6,7 @@ This project accompanies the Medium article series by [Sergey Neskoromny](https:
 
 - **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb) — the core loop, providers, tools, mixed mode
 - **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/@sergey-nes/781e0db1b5b3) — reliability layer: retry, circuit breaker, schema validation, tracing, and provider fallback
+- **"Engineering in the Agentic Era" series** — Part 3: CI Passed. The Layout Was Broken. — visual testing agent: `visual-testing/ui_agent.py`, `visual-testing/mobile_tools.py` (see [Visual Testing](#visual-testing) below)
 
 
 Follow me on [LinkedIn](https://lnkd.in/epTFAmQJ) and [Medium](https://sergey-nes.medium.com/) for more on AI tools, mobile development, and whatever I'm currently building!
@@ -150,16 +151,22 @@ This triggers six tool calls in sequence: `get_current_date` → `get_weather` �
 
 ```
 mini_agent/
-├── agent.py         # CLI entry point — argument parsing, REPL, mode dispatch
-├── core.py          # The agent loop: run_agent() and run_agent_mixed()
-├── reliability.py   # Reliability layer: retry, circuit breaker, validation, tracing, provider fallback
-├── providers.py     # LLM provider abstraction (OpenAI, Anthropic, Gemini, Ollama)
-├── tools.py         # Tool implementations and schemas
-├── ui.py            # Spinner — thread-safe braille activity indicator
-├── mcp_server.py    # Demo MCP server (to_uppercase, count_words)
-├── mcp_client.py    # MCP client helper — spawns the server, calls tools via JSON-RPC
+├── agent.py              # CLI entry point — argument parsing, REPL, mode dispatch
+├── core.py               # The agent loop: run_agent() and run_agent_mixed()
+├── reliability.py        # Reliability layer: retry, circuit breaker, validation, tracing, provider fallback
+├── providers.py          # LLM provider abstraction (OpenAI, Anthropic, Gemini, Ollama)
+├── tools.py              # Tool implementations and schemas
+├── ui.py                 # Spinner — thread-safe braille activity indicator
+├── mcp_server.py         # Demo MCP server (to_uppercase, count_words)
+├── mcp_client.py         # MCP client helper — spawns the server, calls tools via JSON-RPC
 ├── requirements.txt
-└── .env.example
+├── .env.example
+└── visual-testing/
+    ├── ui_agent.py           # Visual flow testing — record & check modes (Anthropic Claude)
+    ├── ui_agent_local.py     # Same tool, local Ollama backend (zero cloud cost)
+    ├── mobile_tools.py       # iOS Simulator + Android screenshot / tap / swipe helpers
+    ├── requirements-ui.txt       # anthropic, pillow
+    └── requirements-ui-local.txt # openai (Ollama client), pillow
 ```
 
 ### Adding your own tools
@@ -229,6 +236,32 @@ Each tool call spawns a fresh subprocess, performs the `initialize` → `call_to
 
 ## Changelog
 
+### v0.3 — Visual testing agent
+
+Added `visual-testing/` — a standalone LLM-driven visual flow testing tool for iOS Simulator and Android. No pixel diff, no XPath selectors — the LLM judges screens by visual intent.
+
+**Core tool (`ui_agent.py`)**
+- `record` mode: human navigates step by step, LLM labels each screen and stores the advancement gesture (tap coordinates or swipe direction) per step in `baselines/index.json`
+- `check` mode: LLM drives the device autonomously — on MATCH applies the stored gesture (zero extra LLM calls); on MISMATCH falls back to dynamic gesture inference, retries up to `--max-retries`
+- `check-all` mode: runs every recorded flow, prints a combined pass/fail summary, exits `1` on any failure — CI-ready
+- `--describe` flag: plain-English flow spec threaded into all three LLM prompts (capture, match, tap) so the LLM knows navigation intent and per-screen assertions
+
+**Local Ollama backend (`ui_agent_local.py`)**
+- Zero cloud cost for check runs — routes all vision calls to a local Ollama model (`llama3.2-vision:11b` default)
+- Hard tap Y clamp at 85% (`_MAX_TAP_Y`) to avoid the iOS home indicator gesture area
+- Markdown bold stripping (`**LABEL:**`) for local models that add formatting
+
+**iOS Simulator gestures (`mobile_tools.py`)**
+- `tap_simulator_osx`: CoreGraphics `CGEventPost` via JXA — activate + tap in one atomic script to prevent Terminal focus stealing
+- `swipe_simulator_osx`: 10 drag steps so iOS registers the motion as a real swipe gesture
+
+**Android improvements**
+- `_get_android_screen_size()`: reads live resolution from `adb shell wm size` — no hardcoded dimensions
+- `tap_android()`: extracted to `mobile_tools.py`, uses dynamic resolution
+- `swipe_android()`: fixed to use dynamic resolution
+
+**Removed**: `browser_tools.py` (web/Playwright support) — tool focuses on mobile only.
+
 ### v0.2 — Reliability layer
 
 Added `reliability.py` on top of the unchanged core loop. Every item is independently useful; none require changes to `core.py`.
@@ -253,6 +286,28 @@ Added `reliability.py` on top of the unchanged core loop. Every item is independ
 ### v0.1 — Initial release
 
 Core agent loop: `agent.py`, `core.py`, `providers.py`, `tools.py`, `ui.py`, MCP client/server.
+
+---
+
+## Visual Testing
+
+`visual-testing/` is a standalone LLM-driven visual flow testing agent for iOS Simulator and Android. **No pixel comparison, no coordinate hunting** — the LLM looks at screenshots and judges by visual intent.
+
+**Quick start:**
+```bash
+cd visual-testing
+pip install -r requirements-ui.txt   # cloud (Anthropic Claude)
+# or:
+pip install -r requirements-ui-local.txt  # local (Ollama, zero cost)
+
+python ui_agent.py record --ios "myapp-onboarding"
+python ui_agent.py check  --ios "myapp-onboarding"
+python ui_agent.py check-all --ios && ./deploy.sh
+```
+
+Full setup guide, iOS Simulator configuration, Android setup, local model comparison, and command reference: **[visual-testing/README.md](visual-testing/README.md)**
+
+> **Disclaimer:** this is a working proof-of-concept, not a production tool. It's here to show the idea is real and — hopefully — to inspire someone to take it further. If you have the desire or the funding to build something serious on top of it, I'd love to be involved. Reach me on [LinkedIn](https://www.linkedin.com/in/sergey-neskoromny/).
 
 ---
 
