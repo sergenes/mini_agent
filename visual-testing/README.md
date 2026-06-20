@@ -3,7 +3,7 @@
 LLM-driven visual flow testing for iOS Simulator and Android. **No pixel comparison, no coordinate hunting** — the LLM looks at screenshots and judges by visual intent.
 
 Part of the [mini_agent](../README.md) project. Accompanies the Medium article series:
-- **Part 3:** CI Passed. The Layout Was Broken. — visual testing agent
+- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch]()
 
 ---
 
@@ -11,10 +11,10 @@ Part of the [mini_agent](../README.md) project. Accompanies the Medium article s
 
 | File | Role |
 |------|------|
-| `ui_agent.py` | CLI — `record`, `check`, `check-all` modes (Anthropic Claude backend) |
+| `ui_agent.py` | CLI — `record`, `check`, `check-all` modes (Anthropic Claude or OpenAI backend, picked by `--model`) |
 | `ui_agent_local.py` | Same CLI, local Ollama backend (zero cloud cost) |
 | `mobile_tools.py` | iOS Simulator + Android screenshot / tap / swipe helpers |
-| `requirements-ui.txt` | `anthropic`, `pillow` |
+| `requirements-ui.txt` | `anthropic`, `openai`, `pillow` |
 | `requirements-ui-local.txt` | `openai` (Ollama client), `pillow` |
 
 Baselines (screenshots + navigation map) are saved in `baselines/`.
@@ -66,15 +66,16 @@ Pass it with `--describe "..."` or enter it at the interactive prompt when you r
 
 ## Setup
 
-### Cloud backend (Anthropic Claude)
+### Cloud backend (Anthropic Claude or OpenAI)
 
 ```bash
 pip install -r requirements-ui.txt
 ```
 
-Add your Anthropic API key to `.env` in the project root:
+`ui_agent.py` picks the provider from `--model`: Claude model names (e.g. `claude-sonnet-4-6`, the default) route to Anthropic; anything starting with `gpt-` (e.g. `gpt-4o`) routes to OpenAI. Add whichever key(s) you need to `.env` in the project root:
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 ```
 
 ### Local backend (Ollama)
@@ -98,7 +99,7 @@ ollama serve                       # keep running in a separate terminal
 xcrun simctl list devices available
 
 # boot the one you want (use the exact name from the list above)
-xcrun simctl boot "iPhone 16 Pro"
+xcrun simctl boot "iPhone 17 Pro"
 
 # open Simulator.app so the window appears on screen
 open -a Simulator
@@ -208,7 +209,7 @@ The tool enters a capture loop — navigate to each screen, press Enter, and the
 Recording flow: myapp-onboarding
 
 Describe this flow so the LLM knows the navigation gestures and what to verify.
-Example: "5-screen onboarding. Tap Continue to advance. Last screen has ToS and Privacy links."
+Example: "6-screen onboarding. Tap Continue to advance. Last screen has ToS and Privacy links."
 Flow description (or Enter to skip): 6-screen onboarding. Tap "Continue" (bottom-center) to advance on screens 1–5. Last screen has "Terms of Service" and "Privacy Policy" links.
 
 Navigate to each screen, then press Enter to capture. Type 'done' to finish.
@@ -240,6 +241,9 @@ After a code change, run check. No navigation needed — the LLM drives the simu
 
 ```bash
 python ui_agent.py check --ios "myapp-onboarding"
+
+# Or use OpenAI instead of Claude
+python ui_agent.py check --ios --model gpt-4o "myapp-onboarding"
 ```
 
 ```
@@ -380,7 +384,7 @@ python ui_agent_local.py check-all --ios
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--describe` | _(prompted at record time)_ | Flow spec: navigation gestures, key elements, assertions |
-| `--model` | `claude-sonnet-4-6` | Vision LLM model |
+| `--model` | `claude-sonnet-4-6` | Vision LLM model. Any Claude model name uses Anthropic; a model starting with `gpt-` (e.g. `gpt-4o`) uses OpenAI instead |
 | `--expect` | _(stored at record time)_ | Extra assertion appended to every check |
 | `--max-retries` | `5` | Gesture attempts per step before marking FAIL |
 | `--ios` | — | Use iOS Simulator |
@@ -397,6 +401,19 @@ python ui_agent_local.py check-all --ios
 - **The flow spec is your test contract.** Describing the navigation and assertions once at record time means every subsequent `check` run validates against those same criteria automatically — no `--expect` flag needed.
 - **Physical iOS devices are not supported.** Apple removed the screenshotr service on iOS 17+. Use the Simulator.
 - **Tap Y clamp.** Both agents clamp tap Y coordinates to ≤ 85% to stay clear of the iOS home indicator gesture area. The local agent (`ui_agent_local.py`) enforces this in code as a hard cap, since small models tend to estimate coordinates too low.
+
+---
+
+## Roadmap
+
+Ideas not yet implemented, full detail in [`improvements.plan.md`](improvements.plan.md):
+
+- **Text input gestures** — `type "text"` steps in the ADVANCE sequence, so flows can fill in forms (login, search) instead of stopping at tap/swipe.
+- **Tap coordinate accuracy** — grid overlay or bounding-box prompts so the LLM reads off a position instead of estimating it, plus a record-time dry-run tap to catch bad coordinates before they're saved.
+- **`--vision-model hybrid`** — local Ollama for the frequent MATCH/MISMATCH check, cloud model only for the rare TAP-recovery call, to cut cost without losing tap precision.
+- **`--check-back`** — exercise the back-navigation gestures already described in the flow spec, not just the forward path.
+- **Platform-aware prompts** — thread `ios`/`android` into the LLM prompts and tap-zone clamp instead of using one iOS-tuned convention for both platforms.
+- **Launch + reset before each run** — cold-launch the app (`simctl launch` / `adb shell am start`) and reset its state (`pm clear` / fresh install) before `record`/`check`, so every run starts from the same deterministic state instead of whatever was left on screen.
 
 ---
 

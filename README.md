@@ -4,9 +4,11 @@ A minimal AI agent built without any agent framework — just Python, the OpenAI
 
 This project accompanies the Medium article series by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/):
 
-- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb) — the core loop, providers, tools, mixed mode
-- **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/@sergey-nes/781e0db1b5b3) — reliability layer: retry, circuit breaker, schema validation, tracing, and provider fallback
-- **"Engineering in the Agentic Era" series** — Part 3: CI Passed. The Layout Was Broken. — visual testing agent: `visual-testing/ui_agent.py`, `visual-testing/mobile_tools.py` (see [Visual Testing](#visual-testing) below)
+## Software Engineering in the Agentic Era" series
+- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/r/?url=https%3A%2F%2Flevelup.gitconnected.com%2Fbuilding-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)
+- **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/gitconnected/your-ai-agent-will-fail-heres-how-to-make-it-recoverable-781e0db1b5b3)
+- **Part 3:** [Building Complete Systems from Day One: Why Simple-First Has Become Expensive in the AI Era](https://medium.com/r/?url=https%3A%2F%2Flevelup.gitconnected.com%2Fbuilding-complete-systems-from-day-one-why-simple-first-has-become-expensive-in-the-ai-era-41dce4a708df)
+- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch]()
 
 
 Follow me on [LinkedIn](https://lnkd.in/epTFAmQJ) and [Medium](https://sergey-nes.medium.com/) for more on AI tools, mobile development, and whatever I'm currently building!
@@ -161,11 +163,11 @@ mini_agent/
 ├── mcp_client.py         # MCP client helper — spawns the server, calls tools via JSON-RPC
 ├── requirements.txt
 ├── .env.example
-└── visual-testing/
-    ├── ui_agent.py           # Visual flow testing — record & check modes (Anthropic Claude)
+└── visual-testing/               # see visual-testing/README.md for full setup & usage
+    ├── ui_agent.py           # Visual flow testing — record & check modes (Anthropic Claude or OpenAI, picked by --model)
     ├── ui_agent_local.py     # Same tool, local Ollama backend (zero cloud cost)
     ├── mobile_tools.py       # iOS Simulator + Android screenshot / tap / swipe helpers
-    ├── requirements-ui.txt       # anthropic, pillow
+    ├── requirements-ui.txt       # anthropic, openai, pillow
     └── requirements-ui-local.txt # openai (Ollama client), pillow
 ```
 
@@ -236,6 +238,10 @@ Each tool call spawns a fresh subprocess, performs the `initialize` → `call_to
 
 ## Changelog
 
+### v0.4 — OpenAI backend for ui_agent.py
+
+`ui_agent.py` now supports OpenAI as a second cloud backend alongside Anthropic Claude. `_vision_call()` dispatches on the `--model` value: a name starting with `gpt-` (e.g. `gpt-4o`) routes to OpenAI's chat completions API with `image_url` content blocks; anything else routes to Anthropic, as before. `requirements-ui.txt` now installs `openai` alongside `anthropic` and `pillow`.
+
 ### v0.3 — Visual testing agent
 
 Added `visual-testing/` — a standalone LLM-driven visual flow testing tool for iOS Simulator and Android. No pixel diff, no XPath selectors — the LLM judges screens by visual intent.
@@ -259,8 +265,6 @@ Added `visual-testing/` — a standalone LLM-driven visual flow testing tool for
 - `_get_android_screen_size()`: reads live resolution from `adb shell wm size` — no hardcoded dimensions
 - `tap_android()`: extracted to `mobile_tools.py`, uses dynamic resolution
 - `swipe_android()`: fixed to use dynamic resolution
-
-**Removed**: `browser_tools.py` (web/Playwright support) — tool focuses on mobile only.
 
 ### v0.2 — Reliability layer
 
@@ -296,12 +300,13 @@ Core agent loop: `agent.py`, `core.py`, `providers.py`, `tools.py`, `ui.py`, MCP
 **Quick start:**
 ```bash
 cd visual-testing
-pip install -r requirements-ui.txt   # cloud (Anthropic Claude)
+pip install -r requirements-ui.txt   # cloud (Anthropic Claude or OpenAI)
 # or:
 pip install -r requirements-ui-local.txt  # local (Ollama, zero cost)
 
 python ui_agent.py record --ios "myapp-onboarding"
 python ui_agent.py check  --ios "myapp-onboarding"
+python ui_agent.py check  --ios --model gpt-4o "myapp-onboarding"  # or use OpenAI
 python ui_agent.py check-all --ios && ./deploy.sh
 ```
 

@@ -89,3 +89,23 @@ response = client.chat.completions.create(
 ## 5. Back-navigation check
 
 The flow spec can describe back gestures (swipe left, hardware back), but `check` mode never exercises them — it only checks the forward path. A `--check-back` flag could verify that each step also supports back navigation correctly.
+
+---
+
+## 6. Platform-specific prompts and tap conventions
+
+Right now `--ios` and `--android` only switch which screenshot/tap/swipe functions get called in `mobile_tools.py` — the LLM prompts (`_capture_prompt`, `_match_prompt`, `_tap_prompt`) are identical for both platforms. iOS and Android have different navigation idioms (iOS home indicator gesture area vs. Android nav bar/back button, different system UI chrome, different standard tap targets), so the prompt should tell the LLM which platform it's looking at and adjust the unsafe-tap-zone guidance accordingly (the current 85% Y clamp is tuned for iOS's home indicator; Android's gesture nav bar sits at a different height and devices vary more in aspect ratio).
+
+**Proposed:** thread a `platform: "ios" | "android"` string into all three prompt builders and into `index.json` per step (already stored at the flow level via `entry["platform"]`, but not surfaced to the LLM). Use it to pick platform-appropriate phrasing ("avoid the gesture bar at the bottom" vs. "avoid the home indicator") and a platform-specific Y clamp instead of one hardcoded value for both.
+
+---
+
+## 7. Launch the app and reset state before each flow
+
+`record` and `check` both assume the app is already running and on the right screen — there's no automated way to cold-launch the app or reset it to a known state before a flow starts. This means every CI run depends on whatever state the simulator/emulator was left in, which defeats the point of having a deterministic baseline.
+
+**Proposed:**
+- iOS: `xcrun simctl launch booted <bundle-id>` (and `xcrun simctl terminate` first to force a cold start) before the first step of `record`/`check`.
+- Android: `adb shell am start -n <package>/<activity>` after `adb shell pm clear <package>` (or `am force-stop`) to reset app state and storage before launch.
+- New flags: `--bundle-id` (iOS) / `--package` (Android), stored once in `index.json` per flow so `check` and `check-all` can relaunch automatically without re-typing them.
+- Pairs naturally with the demo-mode pattern already described in the article: relaunching into a demo-flagged build gives every check run the same deterministic starting state, with no manual reset step before each run.

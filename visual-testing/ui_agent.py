@@ -33,7 +33,8 @@ Usage:
 
 Options:
   --describe TEXT      Flow description: navigation gestures, key elements, assertions
-  --model MODEL        Vision model (default: claude-sonnet-4-6)
+  --model MODEL        Vision model — any Anthropic Claude model, or an OpenAI
+                        model (gpt-4o, gpt-4o-mini, gpt-4.1, ...) (default: claude-sonnet-4-6)
   --expect TEXT        Extra natural-language assertion re-used on every check
   --max-retries N      Gesture attempts per step before marking FAIL (default: 5)
 """
@@ -168,6 +169,14 @@ def _resize_image(b64: str, max_width: int = 1080) -> str:
 
 
 def _vision_call(model: str, prompt: str, images: list[str]) -> str:
+    # Anthropic and OpenAI model names never overlap, so the "gpt-" prefix is
+    # enough to route without a separate --provider flag.
+    if model.startswith("gpt-"):
+        return _vision_call_openai(model, prompt, images)
+    return _vision_call_anthropic(model, prompt, images)
+
+
+def _vision_call_anthropic(model: str, prompt: str, images: list[str]) -> str:
     import anthropic
     client = anthropic.Anthropic()
     resized = [_resize_image(b64) for b64 in images]
@@ -187,6 +196,31 @@ def _vision_call(model: str, prompt: str, images: list[str]) -> str:
             )
             return response.content[0].text.strip()
         except anthropic.APIConnectionError:
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
+
+
+def _vision_call_openai(model: str, prompt: str, images: list[str]) -> str:
+    import openai
+    client = openai.OpenAI()
+    resized = [_resize_image(b64) for b64 in images]
+    content = []
+    for b64 in resized:
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/png;base64,{b64}"},
+        })
+    content.append({"type": "text", "text": prompt})
+    for attempt in range(3):
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                max_tokens=256,
+                messages=[{"role": "user", "content": content}],
+            )
+            return response.choices[0].message.content.strip()
+        except openai.APIConnectionError:
             if attempt == 2:
                 raise
             time.sleep(2 ** attempt)
