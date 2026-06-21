@@ -1,0 +1,71 @@
+{
+  "myapp_onboarding": {
+    "target": "myapp-onboarding",
+    "platform": "ios",
+    "recorded_at": "2026-06-20T23:45:46.373548",
+    "description": "6-screen onboarding. Tap \"Continue\" (bottom-center) to advance on screens 1\u20135. Last screen has \"Terms of Service\" and \"Privacy Policy\" links.",
+    "assertion": "",
+    "steps": [
+      {
+        "file": "myapp_onboarding_step_01.png",
+        "label": "AI agent notifications intro",
+        "review": "No issues found",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.85
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_02.png",
+        "label": "Install Mac app prompt",
+        "review": "No issues found",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.85
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_03.png",
+        "label": "Free trial offer screen",
+        "review": "No issues found",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.85
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_04.png",
+        "label": "End-to-end encryption screen",
+        "review": "No issues found",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.85
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_05.png",
+        "label": "Tutorial step screen",
+        "review": "No issues found",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.85
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_06.png",
+        "label": "QR code scanning prompt",
+        "review": "No issues found",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.85
+        }
+      }
+    ]
+  }
+}

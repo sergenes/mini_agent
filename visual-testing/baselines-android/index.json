@@ -1,0 +1,66 @@
+{
+  "myapp_onboarding": {
+    "target": "myapp-onboarding",
+    "platform": "android",
+    "recorded_at": "2026-06-21T00:39:11.809911",
+    "description": "6-screen onboarding. Tap \"Continue\" (bottom-center) to advance on screens 1\u20135. Last screen has \"Terms of Service\" and \"Privacy Policy\" links.",
+    "assertion": "",
+    "steps": [
+      {
+        "file": "myapp_onboarding_step_01.png",
+        "label": "AI agents notifications intro",
+        "review": "Clean onboarding layout, but the pagination dots (6 total) are small and low-contrast against the light background, which may be hard to see for users with visual impairments.",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.83
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_02.png",
+        "label": "Install Mac app prompt",
+        "review": "Screen is Mac-specific but shown on Android; consider platform-aware content to avoid confusing mobile users.",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.83
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_03.png",
+        "label": "free trial offer screen",
+        "review": "The screen has excessive empty space between the body text and the pagination dots, making the layout feel unbalanced; content could be vertically centered for better visual hierarchy.",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.83
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_04.png",
+        "label": "End-to-end encryption feature",
+        "review": "Clean and minimal layout with strong visual hierarchy; the monospaced font for the heading creates slight stylistic inconsistency with the body text.",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.83
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_05.png",
+        "label": "Step-by-step guide tutorial",
+        "review": "Clean layout with clear CTA, but the link \"agentsatwork.app/tutorial\" could be styled more distinctly to signal it's tappable.",
+        "advance": {
+          "gesture": "tap",
+          "x": 0.5,
+          "y": 0.83
+        }
+      },
+      {
+        "file": "myapp_onboarding_step_06.png",
+        "label": "QR code link mobile screen",
+        "review": "This is the final onboarding screen; the primary CTA is \"Scan QR Code\" rather than \"Continue,\" which breaks the pattern established in screens 1\u20135 and may confuse users expecting a consistent button label."
+      }
+    ]
+  }
+}
