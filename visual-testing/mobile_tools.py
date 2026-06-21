@@ -11,7 +11,9 @@ screenshotr service on iOS 17+. Use the iOS Simulator instead.
 """
 
 import base64
+import os
 import re
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -130,6 +132,33 @@ $.CGEventPost($.kCGHIDEventTap, up);
 
 # ── Android ───────────────────────────────────────────────────────────────────
 
+def _adb_path() -> str:
+    """
+    Resolve the adb binary without relying on the shell's PATH — IDE-integrated
+    terminals and some shells don't inherit the same PATH as Terminal.app, so
+    plain "adb" can resolve in an interactive shell but fail from a subprocess.
+    Checks PATH first, then ANDROID_HOME / ANDROID_SDK_ROOT, then the default
+    macOS SDK install location.
+    """
+    found = shutil.which("adb")
+    if found:
+        return found
+    for env_var in ("ANDROID_HOME", "ANDROID_SDK_ROOT"):
+        sdk_root = os.environ.get(env_var)
+        if sdk_root:
+            candidate = Path(sdk_root) / "platform-tools" / "adb"
+            if candidate.exists():
+                return str(candidate)
+    default = Path.home() / "Library" / "Android" / "sdk" / "platform-tools" / "adb"
+    if default.exists():
+        return str(default)
+    raise RuntimeError(
+        "Could not find 'adb'. Install Android platform-tools and either add it to "
+        "PATH, or set ANDROID_HOME/ANDROID_SDK_ROOT to your SDK root "
+        "(default on macOS: ~/Library/Android/sdk)."
+    )
+
+
 def _get_android_screen_size() -> tuple[int, int]:
     """
     Return (width, height) in physical pixels from the connected device.
@@ -138,7 +167,7 @@ def _get_android_screen_size() -> tuple[int, int]:
     """
     try:
         result = subprocess.run(
-            ["adb", "shell", "wm", "size"],
+            [_adb_path(), "shell", "wm", "size"],
             capture_output=True, text=True, check=True,
         )
         matches = re.findall(r"(\d+)x(\d+)", result.stdout)
@@ -153,7 +182,7 @@ def _get_android_screen_size() -> tuple[int, int]:
 def screenshot_android(package: str = "") -> str:
     """Screenshot the connected Android device or running emulator."""
     result = subprocess.run(
-        ["adb", "exec-out", "screencap", "-p"],
+        [_adb_path(), "exec-out", "screencap", "-p"],
         capture_output=True, check=True,
     )
     return base64.b64encode(result.stdout).decode()
@@ -165,7 +194,7 @@ def tap_android(x_pct: float, y_pct: float) -> None:
     x, y = int(x_pct * w), int(y_pct * h)
     print(f"       [tap] screen=({w},{h}) → tap=({x},{y})")
     subprocess.run(
-        ["adb", "shell", "input", "tap", str(x), str(y)],
+        [_adb_path(), "shell", "input", "tap", str(x), str(y)],
         check=True, capture_output=True,
     )
 
@@ -180,6 +209,6 @@ def swipe_android(direction: str) -> None:
         x1, x2 = int(w * 0.8), int(w * 0.2)
     print(f"       [swipe {direction}] screen=({w},{h}) x: {x1}→{x2} y={cy}")
     subprocess.run(
-        ["adb", "shell", "input", "swipe", str(x1), str(cy), str(x2), str(cy), "300"],
+        [_adb_path(), "shell", "input", "swipe", str(x1), str(cy), str(x2), str(cy), "300"],
         check=True, capture_output=True,
     )
