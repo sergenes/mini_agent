@@ -94,9 +94,11 @@ The flow spec can describe back gestures (swipe left, hardware back), but `check
 
 ## 6. Platform-specific prompts and tap conventions
 
-Right now `--ios` and `--android` only switch which screenshot/tap/swipe functions get called in `mobile_tools.py` — the LLM prompts (`_capture_prompt`, `_match_prompt`, `_tap_prompt`) are identical for both platforms. iOS and Android have different navigation idioms (iOS home indicator gesture area vs. Android nav bar/back button, different system UI chrome, different standard tap targets), so the prompt should tell the LLM which platform it's looking at and adjust the unsafe-tap-zone guidance accordingly (the current 85% Y clamp is tuned for iOS's home indicator; Android's gesture nav bar sits at a different height and devices vary more in aspect ratio).
+**Storage separation — done.** `record`/`check`/`check-all` now keep fully separate baseline directories per platform (`baselines-ios/`, `baselines-android/`, each with its own `index.json`), in both `ui_agent.py` and `ui_agent_local.py`. A flow name is only unique within its own platform's directory, so the same name can exist independently on both. `cmd_check_all` with no `--ios`/`--android` flag loads and runs both directories' flows together.
 
-**Proposed:** thread a `platform: "ios" | "android"` string into all three prompt builders and into `index.json` per step (already stored at the flow level via `entry["platform"]`, but not surfaced to the LLM). Use it to pick platform-appropriate phrasing ("avoid the gesture bar at the bottom" vs. "avoid the home indicator") and a platform-specific Y clamp instead of one hardcoded value for both.
+**Still open — platform-aware prompts.** The LLM prompts (`_capture_prompt`, `_match_prompt`, `_tap_prompt`) are still identical for both platforms. iOS and Android have different navigation idioms (iOS home indicator gesture area vs. Android nav bar/back button, different system UI chrome, different standard tap targets), so the prompt should tell the LLM which platform it's looking at and adjust the unsafe-tap-zone guidance accordingly (the current 85% Y clamp is tuned for iOS's home indicator; Android's gesture nav bar sits at a different height and devices vary more in aspect ratio).
+
+**Proposed:** thread a `platform: "ios" | "android"` string (already known at call time via `_platform(args)`) into all three prompt builders. Use it to pick platform-appropriate phrasing ("avoid the gesture bar at the bottom" vs. "avoid the home indicator") and a platform-specific Y clamp instead of one hardcoded value for both.
 
 ---
 

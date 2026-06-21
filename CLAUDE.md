@@ -92,7 +92,7 @@ All visual testing files live in `visual-testing/`. Run them from that directory
 | `requirements-ui.txt` | `anthropic`, `pillow` |
 | `requirements-ui-local.txt` | `openai` (Ollama client), `pillow` |
 
-Baselines are stored in `visual-testing/baselines/` (`BASELINES_DIR = Path(__file__).parent / "baselines"`).
+Baselines are stored per platform in `visual-testing/baselines-ios/` and `visual-testing/baselines-android/` (`_baselines_dir(platform) = Path(__file__).parent / f"baselines-{platform}"`), each with its own `index.json`. This lets the same flow name be recorded independently on both platforms without one overwriting the other.
 
 **Architecture:**
 - `record` mode: user optionally describes the flow in plain English (`--describe` or interactive prompt). Capture loop — human navigates step by step, presses Enter to save each screen. LLM labels each screen (LABEL/REVIEW/ADVANCE). Advancement gesture (`tap X% Y%`, `swipe right`, `swipe left`) is stored per step in `index.json` alongside the PNG.

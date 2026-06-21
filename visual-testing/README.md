@@ -17,13 +17,33 @@ Part of the [mini_agent](../README.md) project. Accompanies the Medium article s
 | `requirements-ui.txt` | `anthropic`, `openai`, `pillow` |
 | `requirements-ui-local.txt` | `openai` (Ollama client), `pillow` |
 
-Baselines (screenshots + navigation map) are saved in `baselines/`.
+Baselines (screenshots + navigation map) are saved per platform, in `baselines-ios/` or `baselines-android/`. A flow name is only unique within its own platform directory, so `myapp-onboarding` can be recorded separately for iOS and Android without collision.
+
+The repo includes a real recorded example — a 6-screen onboarding flow, captured on both platforms with `record`, checked out as-is so you can see the shape of the output:
+
+```
+baselines-ios/
+├── index.json                       # one entry: "myapp_onboarding" → 6 steps, each with
+│                                     #   label, design review note, and advance gesture
+├── myapp_onboarding_step_01.png
+├── ...
+└── myapp_onboarding_step_06.png
+
+baselines-android/
+├── index.json                       # same flow name, recorded independently — its own
+│                                     #   screenshots, gestures, and (slightly different) Y taps
+├── myapp_onboarding_step_01.png
+├── ...
+└── myapp_onboarding_step_06.png
+```
+
+Run `python ui_agent.py check --ios "myapp-onboarding"` or `--android` against these directly to see a check pass without recording anything yourself first.
 
 ---
 
 ## How it works
 
-**Record** — you navigate the app manually, pressing Enter at each screen. Before the first capture you describe the flow in plain English: navigation gestures, key elements per screen, assertions to verify. The LLM uses that spec to label each screen, note design issues, and determine the advancement gesture (tap position or swipe direction) for each step. Both the screenshots and the navigation map are saved to `baselines/`.
+**Record** — you navigate the app manually, pressing Enter at each screen. Before the first capture you describe the flow in plain English: navigation gestures, key elements per screen, assertions to verify. The LLM uses that spec to label each screen, note design issues, and determine the advancement gesture (tap position or swipe direction) for each step. Both the screenshots and the navigation map are saved to `baselines-ios/` or `baselines-android/`, depending on `--ios`/`--android`.
 
 **Check** — runs one named flow autonomously. For each step the LLM compares the current screen to the baseline (MATCH / MISMATCH). On MATCH it applies the stored advancement gesture directly — no extra LLM call. On MISMATCH it falls back to asking the LLM where to gesture, retries up to `--max-retries` times, then marks the step FAIL.
 
@@ -186,10 +206,26 @@ Replace `539, 587` with coordinates from your own window bounds. If the tap visu
 ## Android emulator setup
 
 ```bash
-emulator -list-avds          # list available virtual devices
-emulator -avd Pixel_8_API_34 &
-adb devices                  # verify it appears
+# List available virtual devices
+~/Library/Android/sdk/emulator/emulator -list-avds
+
+# Boot one (runs in the foreground — use & to background it, or open a new terminal tab)
+~/Library/Android/sdk/emulator/emulator -avd Pixel_9_Pro &
+
+# Wait for it to finish booting, then verify it appears
+~/Library/Android/sdk/platform-tools/adb devices
+# → List of devices attached
+#   emulator-5554	device
 ```
+
+> **Apple Silicon (M1/M2/M3...):** use `~/Library/Android/sdk/emulator/emulator`, not the legacy `~/Library/Android/sdk/tools/emulator`. The `tools/` binary is an old shim that looks for the Intel (`darwin-x86_64`) QEMU backend, which doesn't exist on arm64 Macs, and fails with `Could not launch '.../qemu/darwin-x86_64/qemu-system-aarch64': No such file or directory`. The real binary under `emulator/` picks the correct `darwin-aarch64` backend.
+>
+> **Add to PATH (optional but recommended)** so you can run `emulator` and `adb` directly instead of typing the full path every time:
+> ```bash
+> echo 'export PATH="$HOME/Library/Android/sdk/emulator:$HOME/Library/Android/sdk/platform-tools:$PATH"' >> ~/.zshrc
+> source ~/.zshrc
+> ```
+> `mobile_tools.py` doesn't depend on this — it resolves `adb` itself via `PATH`, then `ANDROID_HOME`/`ANDROID_SDK_ROOT`, then the default SDK location, so `ui_agent.py`/`ui_agent_local.py` work even if `adb` isn't on PATH in the shell that launched Python (this matters for IDE-integrated terminals, which don't always inherit the same PATH as Terminal.app).
 
 Screen resolution is read live from `adb shell wm size` — no hardcoded dimensions.
 
@@ -228,7 +264,7 @@ Step 2 — press Enter to capture, or 'done' to finish:
   ⚠ Download button contrast is slightly low against the teal background.
 
 Step 3 — press Enter to capture, or 'done' to finish: done
-Flow saved: 2 step(s) → baselines/myapp_onboarding_step_*.png
+Flow saved: 2 step(s) → baselines-ios/myapp_onboarding_step_*.png
 ```
 
 Between captures, navigate the app yourself — tap the simulator with your mouse, swipe, use hardware buttons. The tool only captures; you drive.
@@ -349,7 +385,7 @@ All three support multiple images in one call, which is required for the MATCH a
 | First-call latency | ~1-2s | ~10-30s (model load), then ~2-5s/call |
 | Cost per check run | ~$0.01–0.05 | $0 |
 
-**Baselines are shared** — `baselines/index.json` and PNG files work with both `ui_agent.py` and `ui_agent_local.py`. Record with one, check with either.
+**Baselines are shared between backends, not between platforms** — `baselines-ios/index.json` and `baselines-android/index.json` (and their PNGs) work with both `ui_agent.py` and `ui_agent_local.py`. Record with one backend, check with either, as long as you stay on the same `--ios`/`--android` flag.
 
 ---
 
@@ -359,8 +395,10 @@ All three support multiple images in one call, which is required for the MATCH a
 ```bash
 python ui_agent.py record --ios "myapp-onboarding"
 python ui_agent.py record --ios "myapp-signin"
+python ui_agent.py record --ios "myapp-onboarding" --model gpt-4o
 
 python ui_agent.py check      --ios "myapp-onboarding"
+python ui_agent.py check      --ios "myapp-onboarding" --model gpt-4o
 python ui_agent.py check-all  --ios                      # run all iOS flows
 python ui_agent.py check-all                             # run every recorded flow
 ```
@@ -394,7 +432,7 @@ python ui_agent_local.py check-all --ios
 
 ## Notes
 
-- **One flow per name.** The name you pass is the storage key. Recording the same name again asks for confirmation before overwriting.
+- **One flow per name, per platform.** The name you pass is the storage key within that platform's `baselines-<platform>/index.json`. Recording the same name again on the same platform asks for confirmation before overwriting; the same name on the other platform is a separate, independent flow.
 - **Between record steps, navigate yourself.** The tool captures; you drive. Tap the simulator window with your mouse, swipe, use hardware button shortcuts — whatever gets you to the next screen.
 - **Check is fully hands-free.** On MATCH the tool applies the stored advancement gesture (tap or swipe) with no extra LLM call. On MISMATCH it asks the LLM where to gesture and retries. Gestures use CoreGraphics `CGEventPost` — real hardware-level mouse events the Simulator registers as actual touches.
 - **Swipe support.** Both `swipe right` and `swipe left` are stored and replayed. The iOS Simulator receives 10 drag events across the screen width so it recognises the motion as a gesture.
@@ -412,7 +450,7 @@ Ideas not yet implemented, full detail in [`improvements.plan.md`](improvements.
 - **Tap coordinate accuracy** — grid overlay or bounding-box prompts so the LLM reads off a position instead of estimating it, plus a record-time dry-run tap to catch bad coordinates before they're saved.
 - **`--vision-model hybrid`** — local Ollama for the frequent MATCH/MISMATCH check, cloud model only for the rare TAP-recovery call, to cut cost without losing tap precision.
 - **`--check-back`** — exercise the back-navigation gestures already described in the flow spec, not just the forward path.
-- **Platform-aware prompts** — thread `ios`/`android` into the LLM prompts and tap-zone clamp instead of using one iOS-tuned convention for both platforms.
+- **Platform-aware prompts** — baselines are already split per platform (`baselines-ios/`, `baselines-android/`); next step is threading `ios`/`android` into the LLM prompts and tap-zone clamp too, instead of using one iOS-tuned convention for both.
 - **Launch + reset before each run** — cold-launch the app (`simctl launch` / `adb shell am start`) and reset its state (`pm clear` / fresh install) before `record`/`check`, so every run starts from the same deterministic state instead of whatever was left on screen.
 
 ---

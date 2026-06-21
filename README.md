@@ -168,7 +168,13 @@ mini_agent/
     ├── ui_agent_local.py     # Same tool, local Ollama backend (zero cloud cost)
     ├── mobile_tools.py       # iOS Simulator + Android screenshot / tap / swipe helpers
     ├── requirements-ui.txt       # anthropic, openai, pillow
-    └── requirements-ui-local.txt # openai (Ollama client), pillow
+    ├── requirements-ui-local.txt # openai (Ollama client), pillow
+    ├── baselines-ios/            # example recorded flow — one per platform, never shared
+    │   ├── index.json            #   navigation map: label, advance gesture, assertions per step
+    │   └── myapp_onboarding_step_*.png
+    └── baselines-android/        # same flow name, recorded independently on Android
+        ├── index.json
+        └── myapp_onboarding_step_*.png
 ```
 
 ### Adding your own tools
@@ -247,7 +253,7 @@ Each tool call spawns a fresh subprocess, performs the `initialize` → `call_to
 Added `visual-testing/` — a standalone LLM-driven visual flow testing tool for iOS Simulator and Android. No pixel diff, no XPath selectors — the LLM judges screens by visual intent.
 
 **Core tool (`ui_agent.py`)**
-- `record` mode: human navigates step by step, LLM labels each screen and stores the advancement gesture (tap coordinates or swipe direction) per step in `baselines/index.json`
+- `record` mode: human navigates step by step, LLM labels each screen and stores the advancement gesture (tap coordinates or swipe direction) per step in `baselines-<platform>/index.json` — iOS and Android baselines are kept in separate directories, so the same flow name can be recorded on both without collision
 - `check` mode: LLM drives the device autonomously — on MATCH applies the stored gesture (zero extra LLM calls); on MISMATCH falls back to dynamic gesture inference, retries up to `--max-retries`
 - `check-all` mode: runs every recorded flow, prints a combined pass/fail summary, exits `1` on any failure — CI-ready
 - `--describe` flag: plain-English flow spec threaded into all three LLM prompts (capture, match, tap) so the LLM knows navigation intent and per-screen assertions
