@@ -77,7 +77,11 @@ def _capture_prompt(description: str) -> str:
             'For tap coordinates:\n'
             '- X% 0=left edge, 100=right edge of the full image\n'
             '- Y% 0=top edge, 100=bottom edge of the full image\n'
-            '- Tap the TEXT CENTER of the button label, not the bottom edge of the button shape\n'
+            '- First locate the button shape\'s top edge % and bottom edge % separately, '
+            'then report Y as the midpoint of those two — do not guess the center directly, '
+            'since a direct guess tends to land a few percent too high (too far from the bottom)\n'
+            '- Tap the TEXT CENTER of the button label horizontally, but use the button shape\'s '
+            'vertical edges (not the text glyph bounds) for the Y midpoint\n'
             '- The bottom ~15% of the screen is the home indicator / nav bar area — never tap below 85%'
         )
     return "\n".join(lines)
@@ -121,7 +125,11 @@ def _tap_prompt(description: str) -> str:
         "For tap coordinates:\n"
         "- X% 0=left edge, 100=right edge of the full image\n"
         "- Y% 0=top edge, 100=bottom edge of the full image\n"
-        "- Tap the TEXT CENTER of the button label, not the bottom edge of the button shape\n"
+        "- First locate the button shape's top edge % and bottom edge % separately, "
+        "then report Y as the midpoint of those two — do not guess the center directly, "
+        "since a direct guess tends to land a few percent too high (too far from the bottom)\n"
+        "- Tap the TEXT CENTER of the button label horizontally, but use the button shape's "
+        "vertical edges (not the text glyph bounds) for the Y midpoint\n"
         "- The bottom ~15% of the screen is the home indicator / nav bar area — never tap below 85%"
     )
     return "\n".join(parts)
