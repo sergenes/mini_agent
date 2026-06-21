@@ -54,8 +54,7 @@ try:
 except ImportError:
     pass
 
-BASELINES_DIR = Path(__file__).parent / "baselines"
-BASELINES_INDEX = BASELINES_DIR / "index.json"
+BASELINES_ROOT = Path(__file__).parent
 DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
@@ -141,15 +140,36 @@ def _key(target: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", target.lower()).strip("_")
 
 
-def _load_index() -> dict:
-    if BASELINES_INDEX.exists():
-        return json.loads(BASELINES_INDEX.read_text())
+def _platform(args: argparse.Namespace) -> str:
+    """Resolve the platform from --ios/--android. Each platform keeps its own
+    baselines directory, so a flow can be recorded under the same name on
+    both iOS and Android without one overwriting the other."""
+    if args.ios:
+        return "ios"
+    if args.android:
+        return "android"
+    print("Error: specify --ios or --android")
+    sys.exit(1)
+
+
+def _baselines_dir(platform: str) -> Path:
+    return BASELINES_ROOT / f"baselines-{platform}"
+
+
+def _baselines_index_path(platform: str) -> Path:
+    return _baselines_dir(platform) / "index.json"
+
+
+def _load_index(platform: str) -> dict:
+    path = _baselines_index_path(platform)
+    if path.exists():
+        return json.loads(path.read_text())
     return {}
 
 
-def _save_index(index: dict) -> None:
-    BASELINES_DIR.mkdir(exist_ok=True)
-    BASELINES_INDEX.write_text(json.dumps(index, indent=2))
+def _save_index(platform: str, index: dict) -> None:
+    _baselines_dir(platform).mkdir(exist_ok=True)
+    _baselines_index_path(platform).write_text(json.dumps(index, indent=2))
 
 
 def _take_screenshot(args: argparse.Namespace, target: str) -> str:
@@ -308,12 +328,11 @@ def _apply_gesture_reply(args: argparse.Namespace, reply: str) -> bool:
 # ── record ────────────────────────────────────────────────────────────────────
 
 def cmd_record(args: argparse.Namespace, target: str) -> None:
-    if not args.ios and not args.android:
-        print("Error: specify --ios or --android")
-        sys.exit(1)
+    platform = _platform(args)
+    baselines_dir = _baselines_dir(platform)
 
     key = _key(target)
-    index = _load_index()
+    index = _load_index(platform)
     if key in index and index[key].get("steps"):
         answer = input(
             f"Baseline '{target}' already has {len(index[key]['steps'])} step(s). Overwrite? [y/N] "
@@ -356,9 +375,9 @@ def cmd_record(args: argparse.Namespace, target: str) -> None:
             elif line.startswith("ADVANCE:"):
                 advance = _parse_advance(line[len("ADVANCE:"):])
 
-        BASELINES_DIR.mkdir(exist_ok=True)
+        baselines_dir.mkdir(exist_ok=True)
         filename = f"{key}_step_{step_num:02d}.png"
-        (BASELINES_DIR / filename).write_bytes(base64.b64decode(b64))
+        (baselines_dir / filename).write_bytes(base64.b64decode(b64))
 
         step_entry: dict = {"file": filename, "label": label, "review": review}
         if advance:
@@ -382,20 +401,20 @@ def cmd_record(args: argparse.Namespace, target: str) -> None:
 
     index[key] = {
         "target": target,
-        "platform": "ios" if args.ios else "android",
+        "platform": platform,
         "recorded_at": datetime.utcnow().isoformat(),
         "description": description,
         "assertion": args.expect or "",
         "steps": steps,
     }
-    _save_index(index)
-    print(f"Flow saved: {len(steps)} step(s) → baselines/{key}_step_*.png")
+    _save_index(platform, index)
+    print(f"Flow saved: {len(steps)} step(s) → baselines-{platform}/{key}_step_*.png")
 
 
 # ── check ─────────────────────────────────────────────────────────────────────
 
 def _run_flow_check(
-    args: argparse.Namespace, target: str, entry: dict
+    args: argparse.Namespace, target: str, entry: dict, baselines_dir: Path
 ) -> tuple[bool, list[tuple[str, bool]]]:
     """
     Run the check loop for one flow. Returns (all_passed, [(label, passed), ...]).
@@ -412,7 +431,7 @@ def _run_flow_check(
     for i, step in enumerate(steps):
         label = step.get("label", f"step {i + 1}")
         baseline_b64 = base64.b64encode(
-            (BASELINES_DIR / step["file"]).read_bytes()
+            (baselines_dir / step["file"]).read_bytes()
         ).decode()
         is_last = (i == len(steps) - 1)
 
@@ -464,51 +483,48 @@ def _print_flow_summary(results: list[tuple[str, bool]]) -> None:
 
 
 def cmd_check(args: argparse.Namespace, target: str) -> None:
+    platform = _platform(args)
     key = _key(target)
-    index = _load_index()
+    index = _load_index(platform)
     if key not in index:
-        print(f"No baseline for '{target}'. Run: python ui_agent.py record --ios '{target}'")
+        print(f"No {platform} baseline for '{target}'. Run: python ui_agent.py record --{platform} '{target}'")
         sys.exit(1)
 
     entry = index[key]
     if not entry.get("steps"):
-        print(f"Baseline '{target}' has no recorded steps. Re-record it with --ios or --android.")
+        print(f"Baseline '{target}' has no recorded steps. Re-record it with --{platform}.")
         sys.exit(1)
 
-    all_pass, results = _run_flow_check(args, target, entry)
+    all_pass, results = _run_flow_check(args, target, entry, _baselines_dir(platform))
     _print_flow_summary(results)
     sys.exit(0 if all_pass else 1)
 
 
 def cmd_check_all(args: argparse.Namespace) -> None:
     import copy
-    index = _load_index()
-    if not index:
-        print("No flows recorded yet.")
-        sys.exit(0)
+    # No --ios/--android filter means "every platform" — each has its own
+    # baselines-<platform>/index.json, so they're loaded and run independently.
+    platforms = [p for p in ("ios", "android") if getattr(args, p)] or ["ios", "android"]
 
-    flows = {
-        key: entry for key, entry in index.items()
-        if not (args.ios or args.android)
-        or (args.ios and entry.get("platform") == "ios")
-        or (args.android and entry.get("platform") == "android")
-    }
+    flows: list[tuple[str, dict]] = []
+    for platform in platforms:
+        index = _load_index(platform)
+        for entry in index.values():
+            if entry.get("steps"):
+                flows.append((platform, entry))
+            else:
+                print(f"Skipping '{entry.get('target')}' [{platform}]: no recorded steps.")
 
     if not flows:
-        print("No matching flows found for the specified platform.")
+        print("No matching flows found for the specified platform(s).")
         sys.exit(0)
 
     print(f"Running {len(flows)} flow(s)...\n")
 
     all_results: list[tuple[str, bool, list[tuple[str, bool]]]] = []
 
-    for key, entry in flows.items():
+    for platform, entry in flows:
         target = entry["target"]
-        platform = entry.get("platform", "")
-
-        if not entry.get("steps"):
-            print(f"Skipping '{target}': no recorded steps.")
-            continue
 
         flow_args = copy.copy(args)
         flow_args.ios = (platform == "ios")
@@ -518,7 +534,7 @@ def cmd_check_all(args: argparse.Namespace) -> None:
         print(f"  {target}  [{platform}]")
         print(f"{'═' * 50}")
 
-        passed, step_results = _run_flow_check(flow_args, target, entry)
+        passed, step_results = _run_flow_check(flow_args, target, entry, _baselines_dir(platform))
         all_results.append((target, passed, step_results))
         print()
 
