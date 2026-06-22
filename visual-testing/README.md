@@ -3,7 +3,7 @@
 LLM-driven visual flow testing for iOS Simulator and Android. **No pixel comparison, no coordinate hunting** — the LLM looks at screenshots and judges by visual intent.
 
 Part of the [mini_agent](../README.md) project. Accompanies the Medium article series:
-- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://medium.com/@sergey-nes/f52a63ce72ed)
+- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://medium.com/@sergey-nes/give-your-testing-agent-eyes-a-visual-testing-agent-from-scratch-f52a63ce72ed)
 
 ---
 
