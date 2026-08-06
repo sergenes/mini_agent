@@ -2,3 +2,5 @@
 __pycache__/
 /workspace
 .env
+deployment-pipeline/scripts/cd_secrets.env
+deployment-pipeline/.build/
