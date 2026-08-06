@@ -28,8 +28,8 @@ The agent takes a task, calls tools when needed, observes the results, and loops
 ## Setup
 
 ```bash
-git clone https://github.com/sergenes/mini-agent
-cd mini-agent
+git clone https://github.com/sergenes/mini_agent
+cd mini_agent
 
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
