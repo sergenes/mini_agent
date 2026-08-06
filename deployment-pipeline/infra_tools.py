@@ -1,7 +1,7 @@
 """
 Deployment and CI/CD tools for the mini agent.
 
-Tools: run_tests, git_status, git_commit_push, deploy_web, deploy_mobile, notify, remote_trigger.
+Tools: run_tests, git_status, git_commit_push, deploy_web, deploy_mobile, remote_trigger.
 
 To wire these into the agent, merge TOOL_FUNCTIONS and TOOL_SCHEMAS with the
 ones in tools.py, or pass them directly to run_agent():
@@ -72,15 +72,6 @@ def deploy_mobile(platform: str) -> str:
     return f"{status}\n{output}"
 
 
-def notify(message: str) -> str:
-    script = _DIR / "scripts" / "notify.sh"
-    result = subprocess.run(
-        ["bash", str(script), message],
-        capture_output=True, text=True,
-    )
-    return "sent" if result.returncode == 0 else f"failed: {result.stderr.strip()}"
-
-
 def remote_trigger(task: str) -> str:
     url = os.environ.get("REMOTE_TRIGGER_WEBHOOK_URL", "")
     if not url:
@@ -104,7 +95,6 @@ TOOL_FUNCTIONS: dict = {
     "git_commit_push": git_commit_push,
     "deploy_web":      deploy_web,
     "deploy_mobile":   deploy_mobile,
-    "notify":          notify,
     "remote_trigger":  remote_trigger,
 }
 
@@ -182,20 +172,6 @@ TOOL_SCHEMAS: list[dict] = [
                     }
                 },
                 "required": ["platform"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "notify",
-            "description": "Send a Telegram notification (requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in scripts/cd_secrets.env).",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "message": {"type": "string", "description": "Message to send"}
-                },
-                "required": ["message"],
             },
         },
     },

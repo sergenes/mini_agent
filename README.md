@@ -166,13 +166,12 @@ mini_agent/
 ├── .env.example
 ├── deployment-pipeline/          # see "Deployment Pipeline" section below
 │   ├── release.py                # iOS + Android release automation (build → sign → upload)
-│   ├── infra_tools.py            # agent-callable wrappers: deploy, test, commit, notify, trigger
+│   ├── infra_tools.py            # agent-callable wrappers: deploy, test, commit, trigger
 │   ├── ExportOptions.plist       # iOS export options template (edit teamID)
 │   └── scripts/
 │       ├── deploy.sh             # one-command web deploy (Firebase Hosting)
 │       ├── setup.sh              # one-time setup check
 │       ├── test.sh               # run pytest
-│       ├── notify.sh             # Telegram notification
 │       ├── versions.cfg          # build number tracking (auto-bumped by release.py)
 │       └── cd_secrets.env.example  # secrets template — copy to cd_secrets.env
 └── visual-testing/               # see visual-testing/README.md for full setup & usage
@@ -261,8 +260,8 @@ Each tool call spawns a fresh subprocess, performs the `initialize` → `call_to
 Added `deployment-pipeline/` — release automation and agent-callable CI/CD tools.
 
 - `release.py` — one command to build, sign, and upload iOS (TestFlight) or Android (Play Store open testing track)
-- `infra_tools.py` — `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `notify`, `remote_trigger` as agent-callable tools following the same TOOL_FUNCTIONS / TOOL_SCHEMAS pattern as `tools.py`
-- `scripts/deploy.sh`, `test.sh`, `notify.sh`, `setup.sh` — shell scripts the Python wrappers delegate to
+- `infra_tools.py` — `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `remote_trigger` as agent-callable tools following the same TOOL_FUNCTIONS / TOOL_SCHEMAS pattern as `tools.py`
+- `scripts/deploy.sh`, `test.sh`, `setup.sh` — shell scripts the Python wrappers delegate to
 - Build numbers tracked automatically in `scripts/versions.cfg`; credentials isolated in `scripts/cd_secrets.env` (gitignored)
 
 ### v0.4 — OpenAI backend for ui_agent.py
@@ -363,7 +362,7 @@ all_tools     = TOOL_SCHEMAS + INFRA_SCHEMAS
 all_functions = {**TOOL_FUNCTIONS, **INFRA_FN}
 ```
 
-Available agent tools: `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `notify`, `remote_trigger`.
+Available agent tools: `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `remote_trigger`.
 
 ---
 

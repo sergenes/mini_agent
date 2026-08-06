@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Replace YOUR_TEAM_ID with your 10-character Apple Team ID -->
+    <!-- Find it at developer.apple.com/account → Membership Details -->
+    <key>teamID</key>
+    <string>YOUR_TEAM_ID</string>
+
+    <key>method</key>
+    <string>app-store</string>
+
+    <key>uploadSymbols</key>
+    <true/>
+
+    <key>compileBitcode</key>
+    <false/>
+</dict>
+</plist>
