@@ -5,10 +5,10 @@ A minimal AI agent built without any agent framework — just Python, the OpenAI
 This project accompanies the Medium article series by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/):
 
 ## Software Engineering in the Agentic Era" series
-- **Part 1:**  [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)
-- **Part 2:**  [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/gitconnected/your-ai-agent-will-fail-heres-how-to-make-it-recoverable-781e0db1b5b3)
-- **Part 3:**  [Building Complete Systems from Day One: Why Simple-First Has Become Expensive in the AI Era](https://medium.com/gitconnected/building-complete-systems-from-day-one-why-simple-first-has-become-expensive-in-the-ai-era-41dce4a708df)
-- **Part 4:**  [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://medium.com/gitconnected/give-your-testing-agent-eyes-a-visual-testing-agent-from-scratch-f52a63ce72ed)
+- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)
+- **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/gitconnected/your-ai-agent-will-fail-heres-how-to-make-it-recoverable-781e0db1b5b3)
+- **Part 3:** [Building Complete Systems from Day One: Why Simple-First Has Become Expensive in the AI Era](https://medium.com/gitconnected/building-complete-systems-from-day-one-why-simple-first-has-become-expensive-in-the-ai-era-41dce4a708df)
+- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://medium.com/gitconnected/give-your-testing-agent-eyes-a-visual-testing-agent-from-scratch-f52a63ce72ed)
 - **Part 5:** [The Agent Built the Feature in Four Minutes. Deploying It Took Me Forty.](coming soon) — `deployment-pipeline/`
 
 
