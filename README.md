@@ -364,6 +364,8 @@ all_functions = {**TOOL_FUNCTIONS, **INFRA_FN}
 
 Available agent tools: `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `remote_trigger`.
 
+Full setup guide, iOS and Android one-time setup, command reference, and gotchas: **[deployment-pipeline/README.md](deployment-pipeline/README.md)**
+
 ---
 
 ## Visual Testing
