@@ -5,10 +5,11 @@ A minimal AI agent built without any agent framework — just Python, the OpenAI
 This project accompanies the Medium article series by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/):
 
 ## Software Engineering in the Agentic Era" series
-- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://levelup.gitconnected.com/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)
+- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)
 - **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/gitconnected/your-ai-agent-will-fail-heres-how-to-make-it-recoverable-781e0db1b5b3)
-- **Part 3:** [Building Complete Systems from Day One: Why Simple-First Has Become Expensive in the AI Era](https://levelup.gitconnected.com/building-complete-systems-from-day-one-why-simple-first-has-become-expensive-in-the-ai-era-41dce4a708df)
-- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://medium.com/@sergey-nes/give-your-testing-agent-eyes-a-visual-testing-agent-from-scratch-f52a63ce72ed)
+- **Part 3:** [Building Complete Systems from Day One: Why Simple-First Has Become Expensive in the AI Era](https://medium.com/gitconnected/building-complete-systems-from-day-one-why-simple-first-has-become-expensive-in-the-ai-era-41dce4a708df)
+- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://medium.com/gitconnected/give-your-testing-agent-eyes-a-visual-testing-agent-from-scratch-f52a63ce72ed)
+- **Part 5:** [The Agent Built the Feature in Four Minutes. Deploying It Took Me Forty.](coming soon) — `deployment-pipeline/`
 
 
 Follow me on [LinkedIn](https://lnkd.in/epTFAmQJ) and [Medium](https://sergey-nes.medium.com/) for more on AI tools, mobile development, and whatever I'm currently building!
@@ -163,6 +164,16 @@ mini_agent/
 ├── mcp_client.py         # MCP client helper — spawns the server, calls tools via JSON-RPC
 ├── requirements.txt
 ├── .env.example
+├── deployment-pipeline/          # see "Deployment Pipeline" section below
+│   ├── release.py                # iOS + Android release automation (build → sign → upload)
+│   ├── infra_tools.py            # agent-callable wrappers: deploy, test, commit, trigger
+│   ├── ExportOptions.plist       # iOS export options template (edit teamID)
+│   └── scripts/
+│       ├── deploy.sh             # one-command web deploy (Firebase Hosting)
+│       ├── setup.sh              # one-time setup check
+│       ├── test.sh               # run pytest
+│       ├── versions.cfg          # build number tracking (auto-bumped by release.py)
+│       └── cd_secrets.env.example  # secrets template — copy to cd_secrets.env
 └── visual-testing/               # see visual-testing/README.md for full setup & usage
     ├── ui_agent.py           # Visual flow testing — record & check modes (Anthropic Claude or OpenAI, picked by --model)
     ├── ui_agent_local.py     # Same tool, local Ollama backend (zero cloud cost)
@@ -244,6 +255,15 @@ Each tool call spawns a fresh subprocess, performs the `initialize` → `call_to
 
 ## Changelog
 
+### v0.5 — Deployment pipeline
+
+Added `deployment-pipeline/` — release automation and agent-callable CI/CD tools.
+
+- `release.py` — one command to build, sign, and upload iOS (TestFlight) or Android (Play Store open testing track)
+- `infra_tools.py` — `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `remote_trigger` as agent-callable tools following the same TOOL_FUNCTIONS / TOOL_SCHEMAS pattern as `tools.py`
+- `scripts/deploy.sh`, `test.sh`, `setup.sh` — shell scripts the Python wrappers delegate to
+- Build numbers tracked automatically in `scripts/versions.cfg`; credentials isolated in `scripts/cd_secrets.env` (gitignored)
+
 ### v0.4 — OpenAI backend for ui_agent.py
 
 `ui_agent.py` now supports OpenAI as a second cloud backend alongside Anthropic Claude. `_vision_call()` dispatches on the `--model` value: a name starting with `gpt-` (e.g. `gpt-4o`) routes to OpenAI's chat completions API with `image_url` content blocks; anything else routes to Anthropic, as before. `requirements-ui.txt` now installs `openai` alongside `anthropic` and `pillow`.
@@ -296,6 +316,55 @@ Added `reliability.py` on top of the unchanged core loop. Every item is independ
 ### v0.1 — Initial release
 
 Core agent loop: `agent.py`, `core.py`, `providers.py`, `tools.py`, `ui.py`, MCP client/server.
+
+---
+
+## Deployment Pipeline
+
+`deployment-pipeline/` contains the tools to close the loop so the agent can deploy without you at the keyboard.
+
+**Quick start:**
+```bash
+cd deployment-pipeline
+
+# 1. Check dependencies
+bash scripts/setup.sh
+
+# 2. Fill in credentials
+cp scripts/cd_secrets.env.example scripts/cd_secrets.env
+# edit cd_secrets.env
+
+# 3. Edit project paths at the top of release.py
+
+# 4. Validate credentials without building
+python3 release.py --ios --dry-run
+python3 release.py --android --dry-run
+
+# 5. Ship
+python3 release.py --ios
+python3 release.py --android
+bash scripts/deploy.sh          # web
+```
+
+**iOS tip:** Add this key to your app's `Info.plist` so TestFlight skips the encryption compliance question — builds go live immediately after upload:
+```xml
+<key>ITSAppUsesNonExemptEncryption</key>
+<false/>
+```
+
+**Wiring infra tools into the agent:**
+```python
+from deployment_pipeline.infra_tools import TOOL_FUNCTIONS as INFRA_FN
+from deployment_pipeline.infra_tools import TOOL_SCHEMAS   as INFRA_SCHEMAS
+
+# merge with your existing tools
+all_tools     = TOOL_SCHEMAS + INFRA_SCHEMAS
+all_functions = {**TOOL_FUNCTIONS, **INFRA_FN}
+```
+
+Available agent tools: `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `remote_trigger`.
+
+Full setup guide, iOS and Android one-time setup, command reference, and gotchas: **[deployment-pipeline/README.md](deployment-pipeline/README.md)**
 
 ---
 
