@@ -3,7 +3,7 @@
 One-command release automation for iOS (TestFlight) and Android (Play Store), plus agent-callable wrappers so an AI agent can trigger a release itself.
 
 Part of the [mini_agent](../README.md) project. Accompanies the Medium article series:
-- **Part 5:** The Agent Built the Feature in Four Minutes. Deploying It Took Me Forty. (coming soon)
+- **Part 5:** [The Agent Built the Feature in Four Minutes. Deploying It Took Me Forty.](https://medium.com/@sergey-nes/9eec9ba3c206) — `deployment-pipeline/`
 
 ---
 
