@@ -21,6 +21,6 @@ python3 release.py --dry-run
 
 Credentials: `scripts/cd_secrets.env` (gitignored). Build numbers: `scripts/versions.cfg`.
 
-Edit project paths at the top of `release.py` (`IOS_PROJECT`, `ANDROID_DIR`, and friends) for the app you are shipping. Mini_agent does not contain Xcode or Gradle projects; this folder is the template the series walks through. Production paths for Agents At Work live in the agent-bridge repo's `release.py`.
+Edit project paths at the top of `release.py` (`IOS_PROJECT`, `ANDROID_DIR`, and friends) for the app you are shipping. Mini_agent does not contain Xcode or Gradle projects; this folder is the template the series walks through. Production apps keep their own `release.py` with the real paths filled in; this one is the series template only.
 
 `infra_tools.py` exposes `run_tests`, `git_status`, `git_commit_push`, `deploy_web`, `deploy_mobile`, `remote_trigger` as JSON-schema tools. Add those schemas to the agent the same way as `tools.py`.
