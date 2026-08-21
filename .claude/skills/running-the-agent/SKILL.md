@@ -60,6 +60,6 @@ Gemini uses the OpenAI SDK against `generativelanguage.googleapis.com/v1beta/ope
 | `ANTHROPIC_API_KEY` | Anthropic |
 | `GEMINI_API_KEY` | Gemini |
 
-Defaults: openai `gpt-4o-mini`, anthropic `claude-haiku-4-5-20251001`, gemini `gemini-2.0-flash`, ollama `llama3.1`. Function calling works on `llama3.1`, `llama3.2`, `qwen2.5`, `mistral-nemo`. Skip `phi3` and `deepseek-r1` for tools.
+Defaults: openai `gpt-4o-mini`, anthropic `claude-haiku-4-5-20251001`, gemini `gemini-2.0-flash`, ollama `qwen2.5`. Function calling works on `llama3.1`, `llama3.2`, `qwen2.5`, `mistral-nemo`. Skip `phi3` and `deepseek-r1` for tools.
 
 `--fallback MODEL [MODEL …]` tries models in order when structured tool calls fail.

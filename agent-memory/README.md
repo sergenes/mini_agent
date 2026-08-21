@@ -19,6 +19,8 @@ Companion files for the Medium article **Your AI Agent Loads Two Memory/Instruct
 
 Those three at the repo root are the *project* index. They are short on purpose. Procedures live under `.claude/skills/` (and, for Codex, `.agents/skills/`; for Grok, `.grok/skills/`).
 
+`.cursor/skills/` in this repo is a full copy of `.claude/skills/`, not a symlink, so Cursor picks the same skills up. Keep both in sync by hand, or replace the copy with a symlink locally; editing one side and forgetting the other is the easiest way to make this repo lie about itself.
+
 ## Portable pack (`agent-memory/`)
 
 Copy onto a machine, not into every session.

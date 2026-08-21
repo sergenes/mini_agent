@@ -17,7 +17,7 @@ Native Android and iOS apps plus a small web client for the same product. Shared
 
 Project skills (this repo):
 
-- `deploy-ios` / `deploy-android`: TestFlight and Play uploads
+- `deploy`: TestFlight and Play uploads, `--ios` / `--android` flags
 - `visual-check`: record/check flows with `ui_agent.py`
 
 Personal skills (user-level, already referenced from common memory):

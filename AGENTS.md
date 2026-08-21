@@ -17,3 +17,6 @@ Companion repo for the series Software Engineering in the Agentic AI Era. No age
 ## Tools
 
 Claude Code reads `CLAUDE.md` (same text as this file). Gemini CLI reads `GEMINI.md`, which points here. Keep `CLAUDE.md` and `AGENTS.md` in sync by hand until you make one a generated copy of the other.
+
+<!-- mirror of CLAUDE.md. Keep them in sync. -->
+
