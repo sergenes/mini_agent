@@ -18,7 +18,9 @@ _WORKSPACE = Path("workspace")
 
 def _safe_path(relative_path: str) -> Path:
     target = (_WORKSPACE / relative_path).resolve()
-    if not str(target).startswith(str(_WORKSPACE.resolve())):
+    try:
+        target.relative_to(_WORKSPACE.resolve())
+    except ValueError:
         raise ValueError(f"path '{relative_path}' escapes the workspace")
     return target
 
