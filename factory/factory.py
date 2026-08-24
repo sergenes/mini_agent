@@ -24,9 +24,20 @@ it never trusts what you did last time.
 
 Usage:
     python3 factory.py init <project_dir>
-    python3 factory.py status <project_dir>
-    python3 factory.py advance <project_dir>
+    python3 factory.py status <project_dir> [--json]
+    python3 factory.py scaffold <project_dir>
+    python3 factory.py advance <project_dir> [--json]
     python3 factory.py run-milestone <project_dir> "<task>" [--provider openai] [--model gpt-4o-mini]
+
+`scaffold` writes a starter file with proposed sections for whatever
+station you are currently blocked on (SPEC.md, a project CLAUDE.md, a
+no-op release.py, a visual-testing/README.md, or SURVIVE.md). It never
+overwrites a file that already exists. `--json` on status/advance prints
+a machine-readable ```factory-gate-result``` block after the human
+summary, one JSON object with a status, a list of blockers, and a
+suggested next command, the same shape ai-factory's quality gates use
+for their `aif-gate-result` blocks, adapted to this project's own
+seven stations.
 """
 
 from __future__ import annotations
@@ -170,6 +181,147 @@ GATES = {
 }
 
 
+# ---------------------------------------------------------------- scaffold
+#
+# Writing a template does not launder its content: a scaffolded SPEC.md
+# contains the words "platform", "data model", "boundar", and "milestone 1"
+# as section labels, so check_describe passes it the moment it is saved,
+# before a single real word is written. That is not a bug. It is the same
+# honest limit the gates already have: presence, not quality. Scaffold buys
+# you a place to write the real answer, not a shortcut past writing it.
+
+SPEC_TEMPLATE = """# Spec
+
+Platforms: <!-- e.g. iOS, Android, web -->
+
+Data model: <!-- key entities and how they relate -->
+
+Boundaries: <!-- what the agent must not invent or touch -->
+
+Monetization: <!-- free, subscription, one-time, none yet -->
+
+Milestone 1: <!-- the smallest thing a tester could open, with acceptance criteria -->
+"""
+
+CLAUDE_TEMPLATE = """# {name}
+
+<!-- one or two sentences: what this repo is -->
+
+## Always
+
+- Do not invent a new architecture. Load the matching skill first.
+- Do not invent a new deploy path.
+
+## Skills
+
+<!-- name the skills this project should load, e.g. android-architecture -->
+"""
+
+RELEASE_STUB = '#!/usr/bin/env python3\nprint("not wired yet")\n'
+
+VISUAL_README_TEMPLATE = """# Visual testing
+
+<!-- Put recorded baselines here, e.g. baselines-ios/index.json.
+See Part 4 of the series for the full record/check tool. -->
+"""
+
+SURVIVE_TEMPLATE = """# Survive
+
+<!-- Does this touch money, email, or production data?
+If not, say so explicitly. If so, describe how it recovers: retry, circuit breaker, undo. -->
+"""
+
+
+def _write_template(path: Path, content: str) -> bool:
+    if path.exists():
+        print(f"{path} already exists, left untouched")
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    print(f"wrote {path}")
+    return True
+
+
+def cmd_scaffold(project: Path) -> int:
+    station = current_station(project)
+    project.mkdir(parents=True, exist_ok=True)
+
+    if station == "describe":
+        _write_template(project / "SPEC.md", SPEC_TEMPLATE)
+        return 0
+
+    if station == "remember":
+        if any((project / n).exists() for n in ("CLAUDE.md", "AGENTS.md")):
+            print("CLAUDE.md or AGENTS.md already exists, left untouched")
+            return 0
+        _write_template(project / "CLAUDE.md", CLAUDE_TEMPLATE.format(name=project.name))
+        return 0
+
+    if station == "pattern":
+        platforms = _platforms_in_spec(project)
+        if not platforms:
+            print("no platform named in SPEC.md, nothing to scaffold here")
+            return 0
+        missing = [p for p in platforms if not _skill_exists(project, PLATFORM_KEYWORDS[p])]
+        if not missing:
+            print("every named platform already has a matching skill")
+            return 0
+        print("architecture skills are not scaffolded, they are meant to be reused across projects, not generated per project:")
+        for p in missing:
+            print(f"    copy or write {PLATFORM_KEYWORDS[p]}/SKILL.md, e.g. from agent-memory/personal-skills/")
+        return 1
+
+    if station == "move":
+        _write_template(project / "scripts" / "release.py", RELEASE_STUB)
+        return 0
+
+    if station == "see":
+        _write_template(project / "visual-testing" / "README.md", VISUAL_README_TEMPLATE)
+        return 0
+
+    if station == "survive":
+        _write_template(project / "SURVIVE.md", SURVIVE_TEMPLATE)
+        return 0
+
+    print('nothing to scaffold at the "run" station, use run-milestone')
+    return 0
+
+
+def suggest_next(station: str, project: Path, result: GateResult) -> dict:
+    if result.ok:
+        return {"command": "advance", "reason": f'"{station}" gate is satisfied'}
+    needs_file = {
+        "describe": not (project / "SPEC.md").exists(),
+        "remember": not any((project / n).exists() for n in ("CLAUDE.md", "AGENTS.md")),
+        "move": not any((project / p).exists() for p in ("scripts/release.py", "release.py", "deploy.sh")),
+        "see": not any(
+            (project / d).exists() and any((project / d).iterdir())
+            for d in ("visual-testing", "baselines", "tests/golden")
+        ),
+        "survive": not (project / "SURVIVE.md").exists(),
+    }
+    if needs_file.get(station):
+        return {"command": "scaffold", "reason": f'no file exists yet for "{station}"'}
+    return {"command": "advance", "reason": "fix the blockers above, then advance"}
+
+
+def gate_result_payload(station: str, project: Path, result: GateResult) -> dict:
+    return {
+        "schema_version": 1,
+        "station": station,
+        "status": "pass" if result.ok else "fail",
+        "blocking": not result.ok,
+        "blockers": [{"summary": r} for r in result.reasons],
+        "suggested_next": suggest_next(station, project, result),
+    }
+
+
+def print_gate_result_json(station: str, project: Path, result: GateResult) -> None:
+    print("```factory-gate-result")
+    print(json.dumps(gate_result_payload(station, project, result), indent=2))
+    print("```")
+
+
 # ------------------------------------------------------------------ state
 
 def state_path(project: Path) -> Path:
@@ -207,7 +359,7 @@ def cmd_init(project: Path) -> int:
     return 0
 
 
-def cmd_status(project: Path) -> int:
+def cmd_status(project: Path, emit_json: bool = False) -> int:
     state = load_state(project)
     station = current_station(project)
     print(f"station: {station} ({state['station_index'] + 1} of {len(STATIONS)})")
@@ -217,18 +369,22 @@ def cmd_status(project: Path) -> int:
         print(f"gate: {'PASS' if result.ok else 'BLOCKED'}")
         for r in result.reasons:
             print(f"    {r}")
+        if emit_json:
+            print_gate_result_json(station, project, result)
     else:
         print("gate: run one milestone, use `run-milestone` to actually do it")
     return 0
 
 
-def cmd_advance(project: Path) -> int:
+def cmd_advance(project: Path, emit_json: bool = False) -> int:
     state = load_state(project)
     station = current_station(project)
     if station == "run":
         print('current station is "run one milestone", use `run-milestone` instead of `advance`')
         return 1
     result = GATES[station](project)
+    if emit_json:
+        print_gate_result_json(station, project, result)
     if not result.ok:
         print(f"[BLOCKED] {station}")
         for r in result.reasons:
@@ -289,9 +445,14 @@ def main() -> int:
 
     p_status = sub.add_parser("status", help="show current station and whether its gate passes")
     p_status.add_argument("project", type=Path)
+    p_status.add_argument("--json", action="store_true", help="also print a machine-readable factory-gate-result block")
 
     p_advance = sub.add_parser("advance", help="check the current station's gate and advance if it passes")
     p_advance.add_argument("project", type=Path)
+    p_advance.add_argument("--json", action="store_true", help="also print a machine-readable factory-gate-result block")
+
+    p_scaffold = sub.add_parser("scaffold", help="write a starter file with proposed sections for the current station")
+    p_scaffold.add_argument("project", type=Path)
 
     p_run = sub.add_parser("run-milestone", help="run one milestone through the real agent loop")
     p_run.add_argument("project", type=Path)
@@ -304,9 +465,11 @@ def main() -> int:
     if args.command == "init":
         return cmd_init(args.project)
     if args.command == "status":
-        return cmd_status(args.project)
+        return cmd_status(args.project, emit_json=args.json)
     if args.command == "advance":
-        return cmd_advance(args.project)
+        return cmd_advance(args.project, emit_json=args.json)
+    if args.command == "scaffold":
+        return cmd_scaffold(args.project)
     if args.command == "run-milestone":
         return cmd_run_milestone(args.project, args.task, args.provider, args.model)
     return 1

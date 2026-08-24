@@ -181,5 +181,90 @@ class FactoryStateMachineTest(unittest.TestCase):
         self.assertEqual(factory.current_station(self.project), "remember")
 
 
+class FactoryScaffoldTest(unittest.TestCase):
+    def setUp(self):
+        self.project = Path(tempfile.mkdtemp())
+        factory.cmd_init(self.project)
+
+    def tearDown(self):
+        shutil.rmtree(self.project, ignore_errors=True)
+
+    def test_scaffold_writes_spec_at_describe(self):
+        rc = factory.cmd_scaffold(self.project)
+        self.assertEqual(rc, 0)
+        self.assertTrue((self.project / "SPEC.md").exists())
+
+    def test_scaffold_template_passes_its_own_gate(self):
+        # honest limit: presence, not quality, applies to a scaffolded file too
+        factory.cmd_scaffold(self.project)
+        result = factory.check_describe(self.project)
+        self.assertTrue(result.ok, result.reasons)
+
+    def test_scaffold_does_not_overwrite_existing_file(self):
+        self.project.joinpath("SPEC.md").write_text("my real spec\n")
+        factory.cmd_scaffold(self.project)
+        self.assertEqual(self.project.joinpath("SPEC.md").read_text(), "my real spec\n")
+
+    def test_scaffold_writes_claude_md_at_remember(self):
+        factory.cmd_advance(self.project)  # blocked, stays at describe without a spec
+        self.project.joinpath("SPEC.md").write_text(
+            "Platforms: web\nData model: x\nBoundaries: x\nMilestone 1: x\n"
+        )
+        factory.cmd_advance(self.project)
+        self.assertEqual(factory.current_station(self.project), "remember")
+        factory.cmd_scaffold(self.project)
+        self.assertTrue((self.project / "CLAUDE.md").exists())
+
+    def test_scaffold_writes_release_stub_at_move(self):
+        self.project.joinpath("SPEC.md").write_text("Platforms: none\nData model: x\nBoundaries: x\nMilestone 1: x\n")
+        factory.cmd_advance(self.project)
+        self.project.joinpath("CLAUDE.md").write_text("# P\n\nLoad a skill.\n")
+        factory.cmd_advance(self.project)  # remember -> pattern
+        factory.cmd_advance(self.project)  # pattern -> move (no platforms named, gate passes)
+        self.assertEqual(factory.current_station(self.project), "move")
+        factory.cmd_scaffold(self.project)
+        self.assertTrue((self.project / "scripts" / "release.py").exists())
+
+    def test_scaffold_is_noop_at_run_station(self):
+        for _ in range(6):
+            factory.cmd_advance(self.project)
+        # advance stays blocked without real gates satisfied; force the index directly
+        state = factory.load_state(self.project)
+        state["station_index"] = len(factory.STATIONS) - 1
+        factory.save_state(self.project, state)
+        rc = factory.cmd_scaffold(self.project)
+        self.assertEqual(rc, 0)
+
+
+class FactoryJsonGateResultTest(unittest.TestCase):
+    def setUp(self):
+        self.project = Path(tempfile.mkdtemp())
+        factory.cmd_init(self.project)
+
+    def tearDown(self):
+        shutil.rmtree(self.project, ignore_errors=True)
+
+    def test_fail_payload_shape(self):
+        result = factory.check_describe(self.project)
+        payload = factory.gate_result_payload("describe", self.project, result)
+        self.assertEqual(payload["schema_version"], 1)
+        self.assertEqual(payload["station"], "describe")
+        self.assertEqual(payload["status"], "fail")
+        self.assertTrue(payload["blocking"])
+        self.assertTrue(payload["blockers"])
+        self.assertEqual(payload["suggested_next"]["command"], "scaffold")
+
+    def test_pass_payload_suggests_advance(self):
+        self.project.joinpath("SPEC.md").write_text(
+            "Platforms: none\nData model: x\nBoundaries: x\nMilestone 1: x\n"
+        )
+        result = factory.check_describe(self.project)
+        payload = factory.gate_result_payload("describe", self.project, result)
+        self.assertEqual(payload["status"], "pass")
+        self.assertFalse(payload["blocking"])
+        self.assertEqual(payload["blockers"], [])
+        self.assertEqual(payload["suggested_next"]["command"], "advance")
+
+
 if __name__ == "__main__":
     unittest.main()

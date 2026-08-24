@@ -89,5 +89,21 @@ echo "--- run-milestone needs a real provider, shown here as a dry call ---"
 echo "python3 factory.py run-milestone \"$DEMO_DIR\" \"build the signed-out home screen\" --provider openai"
 
 rm -rf "$DEMO_DIR"
+
+echo
+echo "=== bonus: scaffold on a fresh project, plus the machine-readable gate result ==="
+SCAFFOLD_DIR="$(mktemp -d)"
+python3 "$FACTORY" init "$SCAFFOLD_DIR"
+
+echo
+echo "--- scaffold writes a starter file for whatever station is blocked ---"
+python3 "$FACTORY" scaffold "$SCAFFOLD_DIR"
+cat "$SCAFFOLD_DIR/SPEC.md"
+
+echo
+echo "--- honest limit: the gate passes the moment the file exists, before a real word is written ---"
+python3 "$FACTORY" status "$SCAFFOLD_DIR" --json
+
+rm -rf "$SCAFFOLD_DIR"
 echo
 echo "=== demo complete, no API key was used ==="
