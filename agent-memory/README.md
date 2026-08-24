@@ -1,12 +1,14 @@
 # Agent memory examples
 
-Companion files for the Medium article **Your AI Agent Loads Two Memory/Instruction Files Every Turn. Keep Both Thin.** (Part 6, *Software Engineering in the Agentic AI Era*).
+Companion files for the Medium article **Your AI Agent Loads Two Instruction Files Every Turn. Keep Both Thin.** (Part 6, *Software Engineering in the Agentic AI Era*).
+
+The article's core distinction: common memory and project memory are the two slots every agent tool prepends to context. An instruction file is what actually sits inside either slot, a standing rule or a pointer, not a fact recalled from anywhere.
 
 ## This repo vs a production app
 
 | Repo | Role |
 |---|---|
-| **this repo (`mini_agent`)** | Learning loop, visual testing, deploy template, and these example memory files |
+| **this repo (`mini_agent`)** | Learning loop, visual testing, deploy template, and these example instruction files |
 | **a larger production app** (unnamed in the article) | Talks to Claude, Codex, Gemini, Grok, and Cursor. Same split applied there: thin always-on files plus skills |
 
 ## Always-on files in this repo (project)

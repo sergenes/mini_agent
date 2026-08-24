@@ -12,6 +12,13 @@ Copy it to each tool's user-level slot so you are not maintaining five handbooks
 
 The body below stays the same in every copy.
 
+## General guidelines
+
+- When writing commit messages, never auto-add the agent's name as co-author.
+- When making technical decisions, do not weigh development cost heavily. Prefer quality, simplicity, robustness, scalability, and long-term maintainability.
+- When fixing a bug, start by reproducing it end-to-end, as close as possible to how a real user would trigger it. That is how you find the real problem instead of patching a symptom.
+- Hold the same bar for engineering hygiene: lint errors, failing tests, flaky tests. Fix one on sight, even if it is not what you are currently working on.
+
 ## Always
 
 - Ask before committing. Never skip hooks.
