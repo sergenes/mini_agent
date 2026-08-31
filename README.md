@@ -5,12 +5,12 @@ A minimal AI agent built without any agent framework — just Python, the OpenAI
 This project accompanies the Medium article series by [Sergey Neskoromny](https://www.linkedin.com/in/sergey-neskoromny/):
 
 ## Software Engineering in the Agentic Era" series
-- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://medium.com/gitconnected/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb)
-- **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://medium.com/gitconnected/your-ai-agent-will-fail-heres-how-to-make-it-recoverable-781e0db1b5b3)
-- **Part 3:** [Building Complete Systems from Day One: Why Simple-First Has Become Expensive in the AI Era](https://medium.com/gitconnected/building-complete-systems-from-day-one-why-simple-first-has-become-expensive-in-the-ai-era-41dce4a708df)
-- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://medium.com/gitconnected/give-your-testing-agent-eyes-a-visual-testing-agent-from-scratch-f52a63ce72ed)
-- **Part 5:** [The Agent Built the Feature in Four Minutes. Deploying It Took Me Forty.](https://medium.com/@sergey-nes/9eec9ba3c206)
-- **Part 6:** [Your AI Agent Loads Two Instruction Files Every Turn. Keep Both Thin.]()
+- **Part 1:** [Building an AI Agent from Scratch: No Magic, Just a Deterministic Loop](https://levelup.gitconnected.com/building-an-ai-agent-from-scratch-no-magic-just-a-deterministic-loop-a916161705fb?sk=bd25f188cb4cb68d52ef5b77dd67336a)
+- **Part 2:** [Your AI Agent Will Fail. Here's How to Make It Recoverable.](https://levelup.gitconnected.com/your-ai-agent-will-fail-heres-how-to-make-it-recoverable-781e0db1b5b3?sk=88eb3771ebb432ef27658457a546478f)
+- **Part 3:** [Building Complete Systems from Day One: Why Simple-First Has Become Expensive in the AI Era](https://levelup.gitconnected.com/building-complete-systems-from-day-one-why-simple-first-has-become-expensive-in-the-ai-era-41dce4a708df?sk=1be72881afc072fb8f5d9bd724ecc60d)
+- **Part 4:** [Give Your Testing Agent Eyes: A Visual Testing Agent from Scratch](https://levelup.gitconnected.com/give-your-testing-agent-eyes-a-visual-testing-agent-from-scratch-f52a63ce72ed?sk=e94ac212df1ed268e282f1daaa5c3c5e)
+- **Part 5:** [The Agent Built the Feature in Four Minutes. Deploying It Took Me Forty.](https://levelup.gitconnected.com/the-agent-built-the-feature-in-four-minutes-deploying-it-took-me-forty-9eec9ba3c206?sk=5c4b2f529fb8ed6619f25e82bc412400)
+- **Part 6:** [Your AI Agent Loads Two Instruction Files Every Turn. Keep Both Thin.](https://medium.com/gitconnected/your-ai-agent-loads-two-memory-files-every-turn-keep-both-thin-ec71c28f1bb0?sk=c279a1d565f8054d598c9f3704be0305)
 
 
 Follow me on [LinkedIn](https://lnkd.in/epTFAmQJ) and [Medium](https://sergey-nes.medium.com/) for more on AI tools, mobile development, and whatever I'm currently building!
